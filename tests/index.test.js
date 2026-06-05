@@ -181,7 +181,7 @@ describe('BitfinexPricingClient', () => {
       expect(mockPost).toHaveBeenCalledTimes(1)
     })
 
-    it('should return undefined when even the USD pivot cannot resolve a pair', async () => {
+    it('should return null when even the USD pivot cannot resolve a pair', async () => {
       mockPost
         .mockReset()
         .mockResolvedValueOnce({ data: [null] }) // direct BTC->XYZ not supported
@@ -189,7 +189,7 @@ describe('BitfinexPricingClient', () => {
 
       const prices = await client.getMultiCurrentPrices([{ from: 'BTC', to: 'XYZ' }])
 
-      expect(prices).toEqual([undefined])
+      expect(prices).toEqual([null])
     })
   })
 
@@ -356,6 +356,24 @@ describe('BitfinexPricingClient', () => {
         { lastPrice: 2700.5, dailyChange: 15.5, dailyChangeRelative: 0.006 }
       ])
       expect(mockGet).toHaveBeenCalledWith('/tickers?symbols=tXAUT:USD')
+    })
+
+    it('should return null for a pair missing from the response', async () => {
+      mockGet.mockReset().mockResolvedValue({
+        data: [
+          ['tBTCUSD', 163000, 100, 164000, 100, 500, 0.01, 165000, 14480, 166000, 162000]
+        ]
+      })
+
+      const result = await client.getMultiPriceData([
+        { from: 'BTC', to: 'USD' },
+        { from: 'BTC', to: 'BRL' } // not returned by /tickers
+      ])
+
+      expect(result).toEqual([
+        { lastPrice: 165000, dailyChange: 500, dailyChangeRelative: 0.01 },
+        null
+      ])
     })
   })
 })

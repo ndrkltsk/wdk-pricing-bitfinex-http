@@ -46,8 +46,6 @@ export class BitfinexPricingClient extends PricingClient {
    */
   async getCurrentPrice (from, to) {
     const [price] = await this.getMultiCurrentPrices([{ from, to }])
-    // Preserve the previous contract: `null` (not `undefined`) for an
-    // unresolvable pair, matching the old raw /calc/fx passthrough.
     return price ?? null
   }
 
@@ -97,7 +95,7 @@ export class BitfinexPricingClient extends PricingClient {
    * currencies it does not quote, e.g. BRL or ARS) fall back to a two-leg
    * conversion through USD using its fiat FX rates: `from -> USD -> to`.
    * @param {PricePair[]} list - Array of currency pairs
-   * @returns {Promise<Array<number|undefined>>} Prices in the same order as input pairs; `undefined` for pairs that cannot be resolved
+   * @returns {Promise<Array<number|null>>} Prices in the same order as input pairs; `null` for pairs that cannot be resolved
    */
   async getMultiCurrentPrices (list) {
     const direct = await this._fxBatch(
@@ -136,7 +134,7 @@ export class BitfinexPricingClient extends PricingClient {
       const fromUsd = pivot[n * 2]
       const usdTo = pivot[n * 2 + 1]
       prices[listIndex] =
-        fromUsd == null || usdTo == null ? undefined : fromUsd * usdTo
+        fromUsd == null || usdTo == null ? null : fromUsd * usdTo
     })
 
     return prices
@@ -146,7 +144,7 @@ export class BitfinexPricingClient extends PricingClient {
    * Fetches full price data (last price, daily change, relative daily change)
    * for multiple currency pairs in a single batch request.
    * @param {PricePair[]} list - Array of currency pairs
-   * @returns {Promise<PriceData[]>} Price data in the same order as input pairs
+   * @returns {Promise<Array<PriceData|null>>} Price data in the same order as input pairs; `null` for pairs not present in the response
    */
   async getMultiPriceData (list) {
     const symbols = list.map((p) => this._tickerFor(p.from, p.to)).join(',')
@@ -167,7 +165,7 @@ export class BitfinexPricingClient extends PricingClient {
       })
     }
 
-    return list.map((p) => priceDataBySymbol.get(this._tickerFor(p.from, p.to)))
+    return list.map((p) => priceDataBySymbol.get(this._tickerFor(p.from, p.to)) ?? null)
   }
 
   /**

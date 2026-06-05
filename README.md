@@ -63,8 +63,8 @@ Parameters:
 | Method                               | Description                       | Returns                                  |
 | ------------------------------------ | --------------------------------- | ---------------------------------------- |
 | `getCurrentPrice(base, quote)`       | Get latest price                  | `Promise<number \| null>`                |
-| `getMultiCurrentPrices(pairs)`       | Get latest prices in a batch      | `Promise<Array<number \| undefined>>`    |
-| `getMultiPriceData(pairs)`           | Get last price + 24h change batch | `Promise<Array<PriceData \| undefined>>` |
+| `getMultiCurrentPrices(pairs)`       | Get latest prices in a batch      | `Promise<Array<number \| null>>`         |
+| `getMultiPriceData(pairs)`           | Get last price + 24h change batch | `Promise<Array<PriceData \| null>>`      |
 | `getHistoricalPrice(from, to, opts?)`| Get price history                 | `Promise<Array<any>>`                    |
 
 #### `getCurrentPrice(base, quote)`
@@ -83,7 +83,7 @@ const brl = await client.getCurrentPrice("BTC", "BRL"); // resolved via USD pivo
 
 Resolves many pairs in a single batch request, applying the same USD-pivot
 fallback per pair. Results are returned in the same order as the input; a pair
-that cannot be resolved even through the pivot is `undefined`.
+that cannot be resolved even through the pivot is `null`.
 
 ```javascript
 const prices = await client.getMultiCurrentPrices([
@@ -97,7 +97,7 @@ const prices = await client.getMultiCurrentPrices([
 Returns the last price plus 24h absolute and relative change for each pair, from
 the Bitfinex `/tickers` endpoint. Unlike the methods above, it does **not** use
 the USD pivot, so a currency Bitfinex does not quote directly resolves to
-`undefined`. Results are returned in the same order as the input.
+`null`. Results are returned in the same order as the input.
 
 ```javascript
 const data = await client.getMultiPriceData([{ from: "BTC", to: "USD" }]);
@@ -117,7 +117,7 @@ const series = await client.getHistoricalPrice("BTC", "USD");
 - **Currency codes are Bitfinex-specific.** You must pass the codes Bitfinex
   uses, not the common ISO/ticker symbol. For example, Tether is `UST` (not
   `USDT`), and some fiats are only available as tokenized assets such as `CNHT`
-  or `MXNT`. Unknown codes resolve to `null` / `undefined`. The full list is at
+  or `MXNT`. Unknown codes resolve to `null`. The full list is at
   `https://api-pub.bitfinex.com/v2/conf/pub:list:currency`.
 - **The USD pivot only applies to current prices.** `getCurrentPrice` and
   `getMultiCurrentPrices` fall back to a `from → USD → to` conversion for fiat
@@ -127,7 +127,7 @@ const series = await client.getHistoricalPrice("BTC", "USD");
 - **`getMultiPriceData` does not support pivot currencies.** It sources last
   price and daily change from `/tickers`, which only exists for natively quoted
   pairs. For a currency that requires the USD pivot (e.g. BRL, ARS) it returns
-  `undefined` for that entry.
+  `null` for that entry.
 
 ## 🛠️ Development
 
